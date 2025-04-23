@@ -1,0 +1,137 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.time.Duration;
+import java.time.Instant;
+
+public class Main extends JFrame {
+    private static final String TEST_TEXT = "The quick brown fox jumps over the lazy dog.";
+    private JEditorPane typingArea;
+    private JLabel promptLabel, animalLabel, resultLabel;
+    private JButton startButton, submitButton;
+    private Instant startTime;
+
+    public Main() {
+        setTitle("Typing Speed Test");
+        setSize(800, 500);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+        getContentPane().setBackground(Color.DARK_GRAY);
+
+        // Prompt Label
+        promptLabel = new JLabel("\"" + TEST_TEXT + "\"");
+        promptLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        promptLabel.setForeground(Color.WHITE);
+        promptLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        typingArea = new JEditorPane();
+        typingArea.setFont(new Font("Monospaced", Font.PLAIN, 18));
+        typingArea.setBackground(Color.BLACK);
+        typingArea.setForeground(Color.GREEN);
+        typingArea.setCaretColor(Color.WHITE);
+        typingArea.setEditable(false);
+
+        animalLabel = new JLabel();
+        animalLabel.setFont(new Font("Segoe UI Emoji", Font.BOLD, 20));
+        animalLabel.setForeground(Color.WHITE);
+        animalLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        resultLabel = new JLabel();
+        resultLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        resultLabel.setForeground(Color.YELLOW);
+        resultLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        startButton = new JButton("Start");
+        submitButton = new JButton("Submit");
+        submitButton.setEnabled(false);
+
+        // Layout Setup
+        JPanel topPanel = new JPanel(new GridLayout(2, 1));
+        topPanel.setBackground(Color.DARK_GRAY);
+        topPanel.add(promptLabel);
+        topPanel.add(startButton);
+
+        add(topPanel, BorderLayout.NORTH);
+        add(new JScrollPane(typingArea), BorderLayout.CENTER);
+
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setBackground(Color.DARK_GRAY);
+        bottomPanel.add(submitButton);
+        bottomPanel.add(animalLabel);
+        bottomPanel.add(resultLabel);
+        add(bottomPanel, BorderLayout.SOUTH);
+
+        // Start Button Action
+        startButton.addActionListener(e -> {
+            typingArea.setText("");
+            typingArea.setEditable(true);
+            typingArea.requestFocus();
+            startTime = Instant.now();
+            submitButton.setEnabled(true);
+            animalLabel.setText("");
+            resultLabel.setText("");
+        });
+
+        // Submit Button Action
+        submitButton.addActionListener(e -> {
+            String typedText = typingArea.getText().trim();
+            Duration timeElapsed = Duration.between(startTime, Instant.now());
+            double minutes = timeElapsed.toMillis() / 60000.0;
+            int wordsTyped = typedText.isEmpty() ? 0 : typedText.split("\\s+").length;
+            int wpm = (int) (wordsTyped / minutes);
+
+            int correctChars = 0;
+            for (int i = 0; i < Math.min(typedText.length(), TEST_TEXT.length()); i++) {
+                if (typedText.charAt(i) == TEST_TEXT.charAt(i)) {
+                    correctChars++;
+                }
+            }
+            int accuracy = (int) ((double) correctChars / TEST_TEXT.length() * 100);
+
+            // Set Turtle or Rabbit Message
+            if (wpm < 30) {
+                animalLabel.setText("<html>🐢 You're the Turtle! 🐌 <br> Even a 🦆 duck might outrun you! 🏃‍♂️💨</html>");
+            } else {
+                animalLabel.setText("<html>🐇 You're the Rabbit! 🏎️🚀 <br> Zooming like AI! 🤖⚡</html>");
+            }
+
+            // Set WPM and Accuracy
+            resultLabel.setText("<html><br>WPM: " + wpm + "<br>Accuracy: " + accuracy + "%</html>");
+
+            // Highlight Words
+            highlightWords(typedText);
+            submitButton.setEnabled(false);
+            typingArea.setEditable(false);
+        });
+    }
+
+    // Highlight Correct & Incorrect Words
+    private void highlightWords(String typedText) {
+        String[] typedWords = typedText.split("\\s+");
+        String[] targetWords = TEST_TEXT.split("\\s+");
+
+        StringBuilder highlightedText = new StringBuilder("<html>");
+
+        for (int i = 0; i < targetWords.length; i++) {
+            String targetWord = targetWords[i];
+            if (i < typedWords.length) {
+                String typedWord = typedWords[i];
+                if (typedWord.equals(targetWord)) {
+                    highlightedText.append("<span style='color:green;'>").append(typedWord).append("</span> ");
+                } else {
+                    highlightedText.append("<span style='color:red;'>").append(typedWord).append("</span> ");
+                }
+            } else {
+                highlightedText.append("<span style='color:red;'>").append(targetWord).append("</span> ");
+            }
+        }
+
+        highlightedText.append("</html>");
+        typingArea.setContentType("text/html");
+        typingArea.setText(highlightedText.toString());
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new Main().setVisible(true));
+    }
+}
